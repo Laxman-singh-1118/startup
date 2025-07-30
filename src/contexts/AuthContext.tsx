@@ -32,9 +32,14 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [firebaseError, setFirebaseError] = useState<string | null>(null);
 
   const signup = async (email: string, password: string, displayName: string) => {
     try {
+      if (!auth) {
+        throw new Error('Firebase is not initialized. Please check your configuration.');
+      }
+      
       console.log('Attempting to sign up user:', email);
       const result = await createUserWithEmailAndPassword(auth, email, password);
       console.log('User created successfully:', result.user.uid);
@@ -45,30 +50,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userRole = displayName.includes('(admin)') ? 'admin' : 'student';
       const cleanDisplayName = displayName.replace(/\s*\([^)]*\)/, '');
 
-      await setDoc(doc(db, 'users', result.user.uid), {
-        uid: result.user.uid,
-        email: result.user.email,
-        displayName: cleanDisplayName,
-        role: userRole,
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString()
-      });
+      if (db) {
+        await setDoc(doc(db, 'users', result.user.uid), {
+          uid: result.user.uid,
+          email: result.user.email,
+          displayName: cleanDisplayName,
+          role: userRole,
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        });
 
-      console.log('User data stored in Firestore');
+        console.log('User data stored in Firestore');
+      }
     } catch (error: any) {
       console.error('Signup error:', error);
+      setFirebaseError(error.message);
       throw error;
     }
   };
 
   const login = async (email: string, password: string) => {
     try {
+      if (!auth) {
+        throw new Error('Firebase is not initialized. Please check your configuration.');
+      }
+      
       console.log('Attempting to login user:', email);
       await signInWithEmailAndPassword(auth, email, password);
       console.log('User logged in successfully');
       
       // Update last login time in Firestore and create record if doesn't exist
-      if (auth.currentUser) {
+      if (auth.currentUser && db) {
         const user = auth.currentUser;
         const userRole = user.displayName?.includes('(admin)') ? 'admin' : 'student';
         const cleanDisplayName = user.displayName?.replace(/\s*\([^)]*\)/, '') || user.email || '';
@@ -86,17 +98,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error: any) {
       console.error('Login error:', error);
+      setFirebaseError(error.message);
       throw error;
     }
   };
 
   const logout = () => {
     console.log('Logging out user');
+    if (!auth) {
+      console.error('Firebase auth not initialized');
+      return Promise.resolve();
+    }
     return signOut(auth);
   };
 
   const getAllUsers = async () => {
     try {
+      if (!db) {
+        console.error('Firebase Firestore not initialized');
+        return [];
+      }
+      
       console.log('Fetching all users from Firestore');
       const usersRef = collection(db, 'users');
       const q = query(usersRef, where('role', '==', 'student'));
@@ -116,6 +138,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    if (!auth) {
+      console.error('Firebase auth not initialized');
+      setLoading(false);
+      setFirebaseError('Firebase is not properly configured. Please check your environment variables.');
+      return;
+    }
+    
     console.log('Setting up Firebase auth state listener');
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       console.log('Auth state changed:', user ? `User logged in: ${user.email}` : 'No user');
@@ -123,6 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     }, (error) => {
       console.error('Auth state listener error:', error);
+      setFirebaseError(error.message);
       setLoading(false);
     });
 
@@ -135,7 +165,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     logout,
     getAllUsers,
-    loading
+    loading,
+    firebaseError
   };
 
   return (

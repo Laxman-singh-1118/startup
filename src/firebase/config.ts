@@ -13,25 +13,68 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Debug: Log Firebase config (without sensitive data)
-console.log('Firebase Config Check:', {
-  apiKey: firebaseConfig.apiKey ? '✅ Set' : '❌ Missing',
-  authDomain: firebaseConfig.authDomain ? '✅ Set' : '❌ Missing',
-  projectId: firebaseConfig.projectId ? '✅ Set' : '❌ Missing',
-  storageBucket: firebaseConfig.storageBucket ? '✅ Set' : '❌ Missing',
-  messagingSenderId: firebaseConfig.messagingSenderId ? '✅ Set' : '❌ Missing',
-  appId: firebaseConfig.appId ? '✅ Set' : '❌ Missing'
+// Enhanced debugging for production
+console.log('Environment Variables Check:', {
+  VITE_FIREBASE_API_KEY: import.meta.env.VITE_FIREBASE_API_KEY ? '✅ Set' : '❌ Missing',
+  VITE_FIREBASE_AUTH_DOMAIN: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ? '✅ Set' : '❌ Missing',
+  VITE_FIREBASE_PROJECT_ID: import.meta.env.VITE_FIREBASE_PROJECT_ID ? '✅ Set' : '❌ Missing',
+  VITE_FIREBASE_STORAGE_BUCKET: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ? '✅ Set' : '❌ Missing',
+  VITE_FIREBASE_MESSAGING_SENDER_ID: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ? '✅ Set' : '❌ Missing',
+  VITE_FIREBASE_APP_ID: import.meta.env.VITE_FIREBASE_APP_ID ? '✅ Set' : '❌ Missing'
 });
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-console.log('Firebase app initialized successfully');
+// Check if all required config values are present
+const missingConfigs = Object.entries(firebaseConfig).filter(([key, value]) => !value);
 
-// Initialize Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+if (missingConfigs.length > 0) {
+  console.error('Missing Firebase configuration:', missingConfigs.map(([key]) => key));
+  
+  // Show user-friendly error message
+  const errorMessage = `Firebase configuration is missing. Please check your environment variables. Missing: ${missingConfigs.map(([key]) => key).join(', ')}`;
+  
+  // Create a visible error message on the page
+  const errorDiv = document.createElement('div');
+  errorDiv.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #ef4444;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    z-index: 9999;
+    font-family: Arial, sans-serif;
+  `;
+  errorDiv.innerHTML = `
+    <strong>Configuration Error:</strong> ${errorMessage}
+    <br><small>Please check your environment variables in Netlify.</small>
+  `;
+  document.body.appendChild(errorDiv);
+}
 
-console.log('Firebase services initialized:', { auth: !!auth, db: !!db, storage: !!storage });
+// Initialize Firebase only if config is valid
+let app;
+let auth;
+let db;
+let storage;
 
+try {
+  if (missingConfigs.length === 0) {
+    app = initializeApp(firebaseConfig);
+    console.log('Firebase app initialized successfully');
+    
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+    
+    console.log('Firebase services initialized:', { auth: !!auth, db: !!db, storage: !!storage });
+  } else {
+    console.warn('Firebase not initialized due to missing configuration');
+  }
+} catch (error) {
+  console.error('Error initializing Firebase:', error);
+}
+
+export { auth, db, storage };
 export default app; 
