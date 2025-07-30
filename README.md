@@ -197,4 +197,4 @@ To create an admin account, follow these steps:
 - **Upload Documents:** Secure document storage
 - **Exam Suggestions:** AI-powered exam recommendations
 - **One-Click Submit:** Bulk application to multiple exams
-- **Settings:** Personal profile settings 
+- **Settings:** Personal profile settings # starup2
