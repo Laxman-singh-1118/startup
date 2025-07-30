@@ -5,12 +5,13 @@ import { getStorage } from 'firebase/storage';
 
 // Your Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: "AIzaSyAI1TPKXTal8al5TkldMnOGPjxMfVxewNk",
+  authDomain: "exam-form-platform.firebaseapp.com",
+  projectId: "exam-form-platform",
+  storageBucket: "exam-form-platform.firebasestorage.app",
+  messagingSenderId: "120853403233",
+  appId: "1:120853403233:web:75b670197cbc4a510c7c20",
+  measurementId: "G-83XWZESXGV"
 };
 
 // Enhanced debugging for production
